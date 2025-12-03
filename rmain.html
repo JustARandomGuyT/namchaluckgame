@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>What's your today luck?</title>
+  <script src="/_sdk/element_sdk.js"></script>
+  <style>
+    body {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .header {
+      color: white;
+      margin-bottom: 2rem;
+    }
+
+    .title {
+      font-size: 3rem;
+      font-weight: bold;
+      margin: 0 0 1rem 0;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .subtitle {
+      font-size: 1.2rem;
+      opacity: 0.9;
+      margin: 0 0 0.5rem 0;
+    }
+
+    .instructions {
+      font-size: 1rem;
+      opacity: 0.8;
+    }
+
+    .controls {
+      margin: 1.5rem 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .counter {
+      color: white;
+      font-size: 1.2rem;
+      font-weight: 500;
+    }
+
+    .shuffle-button {
+      background: linear-gradient(145deg, #ffd700, #ffed4e);
+      color: #333;
+      border: none;
+      padding: 0.8rem 1.8rem;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    }
+
+    .shuffle-button:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+    }
+
+    .shuffle-button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      gap: 1rem;
+      margin: 2rem auto;
+      max-width: 900px;
+    }
+
+    .card {
+      aspect-ratio: 2/3;
+      background: linear-gradient(145deg, #ffffff, #e6e6e6);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      position: relative;
+      overflow: hidden;
+      animation: fadeIn 0.4s ease-out forwards;
+      opacity: 0;
+    }
+
+    .card:hover:not(.flipped) {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 12px rgba(0,0,0,0.2);
+    }
+
+    .card.shuffling {
+      animation: shuffleOut 0.3s ease-in forwards;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes shuffleOut {
+      0% {
+        opacity: 1;
+        transform: scale(1) rotate(0deg);
+      }
+      50% {
+        opacity: 0.5;
+        transform: scale(0.8) rotate(180deg);
+      }
+      100% {
+        opacity: 0;
+        transform: scale(0.5) rotate(360deg);
+      }
+    }
+
+    .card-back {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      background: linear-gradient(145deg, #ffd700, #ffed4e);
+      border: 3px solid #fff;
+      border-radius: 12px;
+    }
+
+    .card.flipped .card-back {
+      display: none;
+    }
+
+    .card-front {
+      display: none;
+      width: 100%;
+      height: 100%;
+      padding: 1rem;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: white;
+      border-radius: 12px;
+      border: 3px solid #667eea;
+    }
+
+    .card.flipped .card-front {
+      display: flex;
+    }
+
+    .card-icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .card-title {
+      font-size: 0.9rem;
+      font-weight: bold;
+      color: #333;
+      text-align: center;
+    }
+
+    .results {
+      display: none;
+      background: white;
+      border-radius: 20px;
+      padding: 2rem;
+      margin: 2rem auto;
+      max-width: 700px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    .results.show {
+      display: block;
+    }
+
+    .results-title {
+      font-size: 2rem;
+      color: #667eea;
+      margin-bottom: 1.5rem;
+    }
+
+    .result-card {
+      background: linear-gradient(145deg, #f0f0f0, #ffffff);
+      padding: 1.5rem;
+      margin: 1rem 0;
+      border-radius: 15px;
+      border-left: 4px solid #667eea;
+      text-align: left;
+    }
+
+    .result-icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .result-name {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 0.5rem;
+    }
+
+    .result-description {
+      color: #666;
+      line-height: 1.6;
+      margin-bottom: 0.8rem;
+      font-size: 1.05rem;
+    }
+
+    .result-meaning {
+      color: #555;
+      line-height: 1.7;
+      font-size: 0.95rem;
+      padding: 1rem;
+      background: rgba(102, 126, 234, 0.05);
+      border-radius: 10px;
+      margin-top: 0.5rem;
+    }
+
+    .meaning-label {
+      font-weight: 600;
+      color: #667eea;
+      display: block;
+      margin-bottom: 0.3rem;
+    }
+
+    .reset-button {
+      background: linear-gradient(145deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      padding: 1rem 2rem;
+      font-size: 1.1rem;
+      border-radius: 50px;
+      cursor: pointer;
+      margin-top: 1.5rem;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .reset-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+  <script src="https://cdn.tailwindcss.com" type="text/javascript"></script>
+ </head>
+ <body>
+  <main>
+   <div class="container">
+    <header class="header">
+     <h1 class="title" id="pageTitle">What's Your Luck Today?</h1>
+     <p class="subtitle" id="pageSubtitle">Discover your fortune for the day</p>
+     <p class="instructions" id="instructionsText">Pick 3 cards to reveal your daily luck</p>
+    </header>
+    <div class="controls">
+     <div class="counter" id="counter">
+      Cards Selected: 0/3
+     </div><button class="shuffle-button" id="shuffleButton" onclick="shuffleCards()">🔀 Shuffle Cards</button>
+    </div>
+    <div class="card-grid" id="cardGrid"></div>
+    <div class="results" id="results">
+     <h2 class="results-title">Your Daily Fortune</h2>
+     <div id="selectedCards"></div><button class="reset-button" id="resetButton" onclick="resetGame()">Try Again Tomorrow</button>
+    </div>
+   </div>
+  </main>
+  <script>
+    const defaultConfig = {
+      page_title: "What's Your Luck Today?",
+      page_subtitle: "Discover your fortune for the day",
+      instructions_text: "Pick 3 cards to reveal your daily luck",
+      shuffle_button_text: "🔀 Shuffle Cards",
+      reset_button_text: "Try Again Tomorrow",
+      primary_color: "#667eea",
+      secondary_color: "#764ba2",
+      card_color: "#ffd700",
+      text_color: "#333333",
+      background_start: "#667eea",
+      background_end: "#764ba2"
+    };
+
+    const luckTypes = [
+      { icon: "🍀", name: "Fortune", description: "Great opportunities await you today", meaning: "This card signifies that luck is on your side. Be open to unexpected chances and don't hesitate to take calculated risks. The universe is aligning in your favor, making this an excellent time to pursue goals you've been hesitant about." },
+      { icon: "💰", name: "Wealth", description: "Financial gains are on the horizon", meaning: "Financial prosperity is coming your way. This could manifest as a raise, unexpected income, or a profitable opportunity. Stay alert for money-making possibilities and be wise with your resources. Your financial situation is about to improve." },
+      { icon: "❤️", name: "Love", description: "Romance and affection will find you", meaning: "Love energy surrounds you today. If you're in a relationship, expect deeper connection and warmth. If you're single, you may meet someone special or receive affection from unexpected sources. Open your heart and let love flow freely." },
+      { icon: "🎯", name: "Success", description: "Your efforts will be rewarded", meaning: "Hard work pays off today. Whatever you've been striving for is within reach. This card indicates achievement and recognition. Stay focused on your goals and push through any final obstacles—victory is near." },
+      { icon: "🌟", name: "Brilliance", description: "Your creativity will shine bright", meaning: "Your unique talents and abilities will be recognized. You're entering a period where your ideas and contributions stand out. Don't dim your light—let yourself shine and inspire others with your brilliance." },
+      { icon: "🎨", name: "Creativity", description: "Inspiration flows through you", meaning: "Your creative channels are wide open. Whether in art, problem-solving, or daily tasks, you'll find innovative solutions. This is the perfect time to start creative projects or approach challenges from fresh angles." },
+      { icon: "🏆", name: "Achievement", description: "Victory is within your reach", meaning: "A significant accomplishment is imminent. This card represents the culmination of your efforts. Celebrate your progress and prepare to reach a major milestone. Your dedication is about to bear fruit." },
+      { icon: "🌈", name: "Joy", description: "Happiness surrounds you today", meaning: "Pure happiness and contentment fill your day. Find reasons to smile in small moments. Share your joy with others—it's contagious! This card reminds you to appreciate life's simple pleasures and maintain a grateful heart." },
+      { icon: "🎭", name: "Adventure", description: "Exciting experiences await", meaning: "Step out of your comfort zone! New experiences and thrilling opportunities are calling. Say yes to invitations and be spontaneous. Adventure refreshes your spirit and opens doors to unexpected possibilities." },
+      { icon: "📚", name: "Wisdom", description: "Knowledge will come to you easily", meaning: "You're in a prime learning phase. Information you encounter today has special significance. Trust your understanding and share your insights. Whether through reading, conversation, or observation, valuable wisdom comes your way." },
+      { icon: "🌸", name: "Beauty", description: "You'll find beauty in everything", meaning: "Your appreciation for beauty is heightened. Notice the aesthetic pleasures around you—nature, art, people, moments. This card encourages you to create beauty in your environment and see the world through appreciative eyes." },
+      { icon: "⚡", name: "Energy", description: "Vitality and power course through you", meaning: "You're filled with dynamic energy today. Physical vitality and mental alertness are at their peak. Channel this power productively. Exercise, tackle challenging tasks, and make progress on important projects while your energy is high." },
+      { icon: "🎵", name: "Harmony", description: "Peace and balance guide your path", meaning: "Everything falls into place naturally. Conflicts resolve smoothly, and balance returns to chaotic areas. This card represents equilibrium in all aspects of life. Maintain your center and trust that things are working out perfectly." },
+      { icon: "🔮", name: "Mystery", description: "Secrets will be revealed to you", meaning: "Hidden information comes to light. Something you've been wondering about becomes clear. Trust your intuition—it's especially sharp now. Mysteries unravel and understanding deepens about situations that previously confused you." },
+      { icon: "🌙", name: "Intuition", description: "Trust your inner voice today", meaning: "Your gut feelings are remarkably accurate now. Listen to that quiet inner knowing. Your subconscious is processing information and guiding you correctly. Pay attention to dreams, hunches, and subtle impressions." },
+      { icon: "☀️", name: "Optimism", description: "Positivity radiates from within", meaning: "Your positive outlook is infectious and attracts good things. Even challenges seem manageable. This hopeful energy helps you see possibilities where others see problems. Your optimism creates its own reality." },
+      { icon: "🎁", name: "Surprise", description: "Unexpected gifts come your way", meaning: "Delightful surprises are in store. These may be material gifts, kind gestures, or fortunate coincidences. Stay open to the unexpected. The universe has pleasant surprises packaged just for you." },
+      { icon: "🌺", name: "Growth", description: "Personal development flourishes", meaning: "You're evolving rapidly now. Personal growth and self-improvement efforts yield significant results. Embrace change and challenge yourself. You're becoming the person you're meant to be." },
+      { icon: "✨", name: "Magic", description: "Enchantment fills your day", meaning: "Ordinary moments feel extraordinary. There's a magical quality to your experiences today. Synchronicities occur and small miracles happen. Believe in possibilities and watch wonder unfold around you." },
+      { icon: "🦋", name: "Transformation", description: "Positive changes unfold naturally", meaning: "You're in a metamorphosis phase. Old patterns fall away as you embrace new ways of being. This transformation is natural and necessary. Trust the process of change—you're emerging as a better version of yourself." },
+      { icon: "🌻", name: "Vitality", description: "Health and wellness bless you", meaning: "Your physical and mental health are strong. This is an excellent time to establish healthy habits or try new wellness practices. Your body responds well to care. Nurture your well-being." },
+      { icon: "🎊", name: "Celebration", description: "Reasons to rejoice appear", meaning: "Something worth celebrating happens today. Whether big or small, acknowledge and honor good news. Gather with others or celebrate privately. Marking positive moments amplifies their joy." },
+      { icon: "🏅", name: "Recognition", description: "Your talents will be acknowledged", meaning: "Others notice and appreciate your abilities. Expect compliments, recognition, or validation. You've earned this acknowledgment. Receive it graciously and let it boost your confidence." },
+      { icon: "🌠", name: "Dreams", description: "Your wishes move closer to reality", meaning: "Dreams are manifesting into reality. What you've hoped for is coming closer. Keep believing and taking action toward your aspirations. The gap between wishing and having narrows significantly." },
+      { icon: "🎯", name: "Focus", description: "Clarity and concentration strengthen", meaning: "Mental clarity is exceptional today. You can concentrate deeply and think with precision. Use this focused state for important decisions, detailed work, or strategic planning. Your mind is sharp and efficient." },
+      { icon: "🌊", name: "Flow", description: "Everything moves smoothly today", meaning: "You're in the zone. Tasks feel effortless and time passes perfectly. You're aligned with natural rhythms. Don't overthink—trust the flow and let things unfold naturally." },
+      { icon: "🔥", name: "Passion", description: "Your enthusiasm ignites others", meaning: "Your passion is palpable and inspiring. Whatever excites you draws others in. This emotional fire is powerful—use it to motivate yourself and others. Your enthusiasm creates momentum." },
+      { icon: "🌳", name: "Stability", description: "Solid foundations support you", meaning: "You're standing on firm ground. Security and stability characterize your current situation. This solid base allows you to take healthy risks. Feel confident in your position and the support around you." },
+      { icon: "💎", name: "Value", description: "Your worth shines through", meaning: "You recognize your own value, and others see it too. This card affirms your inherent worthiness. Don't settle for less than you deserve. Your value is undeniable and should be honored." },
+      { icon: "🌅", name: "New Beginnings", description: "Fresh starts bring promise", meaning: "A new chapter opens. Whether in work, relationships, or personal development, you're starting fresh. Embrace this clean slate. Past mistakes don't define you. The future is full of potential." },
+      { icon: "🌴", name: "Relaxation", description: "Peace and calm embrace you", meaning: "It's time to rest and recharge. Tension melts away and tranquility fills your space. Give yourself permission to relax. Peaceful moments restore your energy and perspective." },
+      { icon: "🌹", name: "Romance", description: "Affection blooms around you", meaning: "Romantic energy is strong. Existing relationships deepen, or new romantic possibilities appear. Be open to love in all its forms. Express affection and receive it warmly." },
+      { icon: "🎸", name: "Rhythm", description: "Life flows with perfect timing", meaning: "You're in sync with life's tempo. Your timing is impeccable today. Trust your natural rhythms—when to act, when to wait, when to speak, when to listen. Everything happens at the right moment." },
+      { icon: "🌟", name: "Starlight", description: "You stand out brilliantly", meaning: "Your presence is magnetic. People notice you and are drawn to your energy. This isn't about ego—it's about authentic radiance. Let your true self shine without dimming for others' comfort." },
+      { icon: "🌺", name: "Bloom", description: "Your potential unfolds beautifully", meaning: "Like a flower opening, you're revealing your full potential. Talents and abilities that were dormant are now emerging. Allow this natural unfolding without forcing it." },
+      { icon: "🎵", name: "Melody", description: "Everything feels harmonious", meaning: "Different aspects of your life create beautiful harmony. Work, relationships, and personal time blend pleasingly. This balanced composition brings satisfaction and contentment." },
+      { icon: "🌈", name: "Wonder", description: "Awe and amazement visit you", meaning: "Maintain childlike wonder. Amazing things happen when you look at the world with fresh eyes. Let yourself be amazed by ordinary miracles. Wonder opens you to magic and possibility." },
+      { icon: "🌸", name: "Gentleness", description: "Kindness surrounds you", meaning: "Soft approaches work better than force. Treat yourself and others with gentleness. Tender care and kind words create positive change. Strength doesn't require harshness." },
+      { icon: "🌙", name: "Night Wisdom", description: "Hidden things become clear", meaning: "What's concealed in darkness becomes visible. Understanding comes from unexpected sources. Pay attention to what typically goes unnoticed. Nighttime wisdom illuminates daytime confusion." },
+      { icon: "⭐", name: "Guidance", description: "The path forward illuminates", meaning: "Clear direction emerges from confusion. Like stars guiding travelers, signs point you toward the right path. Trust the guidance you receive from various sources today." },
+      { icon: "🌻", name: "Sunshine", description: "Warmth and light guide you", meaning: "Like sunshine nourishing plants, positive energy nourishes your spirit. Brightness dispels shadows in your life. Bask in this warmth and share it with others who need light." },
+      { icon: "🌊", name: "Depth", description: "Understanding deepens today", meaning: "You perceive beneath surfaces to deeper meanings. Superficial explanations don't satisfy you now. Your quest for profound understanding leads to meaningful insights." },
+      { icon: "🔮", name: "Vision", description: "You see clearly into matters", meaning: "Clarity of vision helps you understand situations accurately. You see through illusions and pretenses to what's truly happening. This clear sight guides wise decisions." },
+      { icon: "🎵", name: "Song", description: "Your heart sings with joy", meaning: "Inner happiness expresses itself naturally. You feel like singing or making music. This joy bubbles up from within and wants to be shared. Let your heart's song be heard." },
+      { icon: "🌟", name: "Radiance", description: "You glow with inner light", meaning: "Your inner light shines outward, affecting everyone around you. This radiance comes from contentment and authenticity. You illuminate others' paths simply by being yourself." },
+      { icon: "🌈", name: "Promise", description: "Good things are guaranteed", meaning: "The future holds definite positive outcomes. This card is a cosmic promise that things will work in your favor. Have faith—good results are certain." },
+      { icon: "🎁", name: "Bounty", description: "Abundance comes to you", meaning: "Resources flow generously. Whether time, money, opportunities, or support, you have plenty. This abundance allows you to be generous. Wealth in various forms comes your way." },
+      { icon: "🎯", name: "Destiny", description: "You're exactly where you should be", meaning: "Trust that you're on your correct path. This moment is part of your destiny. Everything has led to this point for a reason. Embrace your journey's perfect timing." },
+      { icon: "🌙", name: "Reflection", description: "Insights come through contemplation", meaning: "Take time for introspection. Looking inward reveals important truths. Reflection helps you process experiences and gain wisdom. Quiet contemplation yields valuable insights." },
+      { icon: "⚡", name: "Lightning", description: "Quick success strikes suddenly", meaning: "Rapid, dramatic progress happens. Like lightning, success comes swiftly and powerfully. Be ready for sudden positive developments. Quick action yields impressive results." },
+      { icon: "🌻", name: "Brightness", description: "Your mood lifts everything", meaning: "Your positive mood elevates situations and people around you. Like sunlight brightening a room, your presence improves atmospheres. Your emotional brightness is a gift to others." },
+      { icon: "🌊", name: "Tide", description: "Natural rhythms favor you", meaning: "Life's natural cycles work in your favor. Like a favorable tide, circumstances carry you forward. Work with these rhythms rather than against them. Flow with natural timing." },
+      { icon: "🔥", name: "Warmth", description: "Comfort and coziness find you", meaning: "Emotional and physical warmth surround you. Comfortable, nurturing environments and relationships provide security. Seek out cozy spaces and warm connections." },
+      { icon: "🌺", name: "Blossom", description: "Things come to fruition", meaning: "Seeds you've planted are finally blooming. Patient efforts produce visible results. What you've nurtured now reaches maturity. Enjoy the fruits of your labor." },
+      { icon: "🎵", name: "Chorus", description: "Unity and togetherness strengthen", meaning: "Collective efforts harmonize beautifully. Working with others produces something greater than individual contributions. Unity creates power. Together you're stronger." },
+      { icon: "🌟", name: "Sparkle", description: "Small joys multiply beautifully", meaning: "Little moments of happiness accumulate into significant joy. Pay attention to small delights—they sparkle like stars. Many small positive experiences create overall happiness." },
+      { icon: "🌈", name: "Spectrum", description: "All possibilities open to you", meaning: "The full range of options is available. No doors are closed. This card represents ultimate potential and possibility. Every direction holds promise." },
+      { icon: "🎁", name: "Treasure", description: "Hidden value reveals itself", meaning: "Something you overlooked has great value. Treasures—whether objects, opportunities, or relationships—reveal themselves. Look more carefully at what you already have." },
+      { icon: "🎯", name: "Target", description: "Your goals become achievable", meaning: "Previously difficult goals now seem reachable. Your aim is accurate and your target is clear. Focus your efforts—success is within range." },
+      { icon: "🌙", name: "Twilight", description: "Perfect timing unfolds naturally", meaning: "The transition period brings special opportunities. Like twilight between day and night, you're in a magical in-between space. This threshold time holds unique potential." },
+      { icon: "⭐", name: "Constellation", description: "Everything aligns perfectly", meaning: "Multiple factors align simultaneously creating ideal conditions. Like stars forming a constellation, separate elements create a meaningful pattern. Perfect alignment makes everything possible." }
+    ];
+
+    let selectedCards = [];
+    let displayedCards = [];
+    let hasStartedPicking = false;
+
+    function shuffleArray(array) {
+      const shuffled = [...array];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    }
+
+    function initializeGame() {
+      displayedCards = shuffleArray(luckTypes).slice(0, 20);
+      selectedCards = [];
+      hasStartedPicking = false;
+      updateCounter();
+      updateShuffleButton();
+      renderCards();
+      document.getElementById('results').classList.remove('show');
+    }
+
+    function renderCards() {
+      const grid = document.getElementById('cardGrid');
+      grid.innerHTML = '';
+      
+      displayedCards.forEach((luck, index) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.style.animationDelay = `${index * 0.03}s`;
+        card.innerHTML = `
+          <div class="card-back">🎴</div>
+          <div class="card-front">
+            <div class="card-icon">${luck.icon}</div>
+            <div class="card-title">${luck.name}</div>
+          </div>
+        `;
+        card.addEventListener('click', () => selectCard(index, card));
+        grid.appendChild(card);
+      });
+    }
+
+    function selectCard(index, cardElement) {
+      if (cardElement.classList.contains('flipped')) {
+        return;
+      }
+
+      if (selectedCards.length >= 3) {
+        return;
+      }
+
+      hasStartedPicking = true;
+      updateShuffleButton();
+
+      cardElement.classList.add('flipped');
+      selectedCards.push(displayedCards[index]);
+      updateCounter();
+
+      if (selectedCards.length === 3) {
+        setTimeout(showResults, 800);
+      }
+    }
+
+    function updateCounter() {
+      document.getElementById('counter').textContent = `Cards Selected: ${selectedCards.length}/3`;
+    }
+
+    function updateShuffleButton() {
+      const shuffleBtn = document.getElementById('shuffleButton');
+      shuffleBtn.disabled = hasStartedPicking;
+    }
+
+    function shuffleCards() {
+      if (!hasStartedPicking) {
+        const allCards = document.querySelectorAll('.card');
+        allCards.forEach((card, index) => {
+          card.classList.add('shuffling');
+          card.style.animationDelay = `${index * 0.02}s`;
+        });
+        
+        setTimeout(() => {
+          displayedCards = shuffleArray(luckTypes).slice(0, 20);
+          renderCards();
+        }, 400);
+      }
+    }
+
+    function showResults() {
+      const resultsDiv = document.getElementById('selectedCards');
+      resultsDiv.innerHTML = '';
+      
+      selectedCards.forEach(luck => {
+        const resultCard = document.createElement('div');
+        resultCard.className = 'result-card';
+        resultCard.innerHTML = `
+          <div class="result-icon">${luck.icon}</div>
+          <div class="result-name">${luck.name}</div>
+          <div class="result-description">${luck.description}</div>
+          <div class="result-meaning">
+            <span class="meaning-label">What This Means:</span>
+            ${luck.meaning}
+          </div>
+        `;
+        resultsDiv.appendChild(resultCard);
+      });
+
+      document.getElementById('results').classList.add('show');
+    }
+
+    function resetGame() {
+      initializeGame();
+    }
+
+    async function onConfigChange(config) {
+      document.getElementById('pageTitle').textContent = config.page_title || defaultConfig.page_title;
+      document.getElementById('pageSubtitle').textContent = config.page_subtitle || defaultConfig.page_subtitle;
+      document.getElementById('instructionsText').textContent = config.instructions_text || defaultConfig.instructions_text;
+      document.getElementById('shuffleButton').textContent = config.shuffle_button_text || defaultConfig.shuffle_button_text;
+      document.getElementById('resetButton').textContent = config.reset_button_text || defaultConfig.reset_button_text;
+
+      const primaryColor = config.primary_color || defaultConfig.primary_color;
+      const secondaryColor = config.secondary_color || defaultConfig.secondary_color;
+      const cardColor = config.card_color || defaultConfig.card_color;
+      const textColor = config.text_color || defaultConfig.text_color;
+      const bgStart = config.background_start || defaultConfig.background_start;
+      const bgEnd = config.background_end || defaultConfig.background_end;
+
+      document.body.style.background = `linear-gradient(135deg, ${bgStart} 0%, ${bgEnd} 100%)`;
+      
+      const existingStyle = document.getElementById('dynamicStyles');
+      if (existingStyle) {
+        existingStyle.remove();
+      }
+      
+      const style = document.createElement('style');
+      style.id = 'dynamicStyles';
+      style.textContent = `
+        .card-back {
+          background: linear-gradient(145deg, ${cardColor}, #ffed4e) !important;
+        }
+        .card-front {
+          border-color: ${primaryColor} !important;
+        }
+        .results-title {
+          color: ${primaryColor} !important;
+        }
+        .result-card {
+          border-left-color: ${primaryColor} !important;
+        }
+        .result-name {
+          color: ${textColor} !important;
+        }
+        .meaning-label {
+          color: ${primaryColor} !important;
+        }
+        .reset-button {
+          background: linear-gradient(145deg, ${primaryColor}, ${secondaryColor}) !important;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    if (window.elementSdk) {
+      window.elementSdk.init({
+        defaultConfig,
+        onConfigChange,
+        mapToCapabilities: (config) => ({
+          recolorables: [
+            {
+              get: () => config.background_start || defaultConfig.background_start,
+              set: (value) => {
+                config.background_start = value;
+                window.elementSdk.setConfig({ background_start: value });
+              }
+            },
+            {
+              get: () => config.background_end || defaultConfig.background_end,
+              set: (value) => {
+                config.background_end = value;
+                window.elementSdk.setConfig({ background_end: value });
+              }
+            },
+            {
+              get: () => config.card_color || defaultConfig.card_color,
+              set: (value) => {
+                config.card_color = value;
+                window.elementSdk.setConfig({ card_color: value });
+              }
+            },
+            {
+              get: () => config.primary_color || defaultConfig.primary_color,
+              set: (value) => {
+                config.primary_color = value;
+                window.elementSdk.setConfig({ primary_color: value });
+              }
+            },
+            {
+              get: () => config.text_color || defaultConfig.text_color,
+              set: (value) => {
+                config.text_color = value;
+                window.elementSdk.setConfig({ text_color: value });
+              }
+            }
+          ],
+          borderables: [],
+          fontEditable: undefined,
+          fontSizeable: undefined
+        }),
+        mapToEditPanelValues: (config) => new Map([
+          ["page_title", config.page_title || defaultConfig.page_title],
+          ["page_subtitle", config.page_subtitle || defaultConfig.page_subtitle],
+          ["instructions_text", config.instructions_text || defaultConfig.instructions_text],
+          ["shuffle_button_text", config.shuffle_button_text || defaultConfig.shuffle_button_text],
+          ["reset_button_text", config.reset_button_text || defaultConfig.reset_button_text]
+        ])
+      });
+    }
+
+    initializeGame();
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9a834e7c313c5fcd',t:'MTc2NDc2NzQ1MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
